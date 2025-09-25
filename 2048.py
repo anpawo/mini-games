@@ -6,6 +6,7 @@ import time
 import os
 import readchar
 import random
+import argparse
 
 
 KeyBind = {
@@ -28,25 +29,28 @@ class Game:
     - the first tile to fuse is the one on the rightest if u press right (same for every direction)
     """
 
-    def __init__(self, seed: int = int(time.time())) -> None:
-        # Random
-        self.seed = seed
-
-        random.seed(self.seed)
-
-        # Game
-        self.score = 0
-        self.board = [[(EMPTY_TILE, HASNT_FUSED) for _ in range(4)] for _ in range(4)]
+    def __init__(self, seed: int = int(time.time()), load: None | str = None, score: int = 0) -> None:
+        self.score = score
         self.boardIsFull = False
         self.tilesMoved = False
 
-        for _ in range(2):
-            y = random.randint(0, 3)
-            x = random.randint(0, 3)
-            while self.board[y][x][0] != 0:
+        # Random
+        self.seed = seed
+        random.seed(self.seed)
+
+        # Load game
+        if load:
+            self.board = [[(int(tile), HASNT_FUSED) for tile in line.split(" ")] for line in open(load).read().split("\n")]
+        # Init Game
+        else:
+            self.board = [[(EMPTY_TILE, HASNT_FUSED) for _ in range(4)] for _ in range(4)]
+            for _ in range(2):
                 y = random.randint(0, 3)
                 x = random.randint(0, 3)
-            self.board[y][x] = (2, HASNT_FUSED) if random.randint(0, 9) != 0 else (4, HASNT_FUSED)
+                while self.board[y][x][0] != 0:
+                    y = random.randint(0, 3)
+                    x = random.randint(0, 3)
+                self.board[y][x] = (2, HASNT_FUSED) if random.randint(0, 9) != 0 else (4, HASNT_FUSED)
 
         # Display
         # self.boardSize = 4
@@ -107,7 +111,7 @@ class Game:
         for y in range(3 if up else 0, -1 if up else 4, -1 if up else 1):
             for x in range(3 if right else 0, -1 if right else 4, -1 if right else 1):
                 # Nothing happens if empty
-                if self.board[y][x] == 0:
+                if self.board[y][x][0] == 0:
                     continue
 
                 # Check collisions
@@ -171,7 +175,18 @@ def clearTerminal():
 
 
 def main():
-    game = Game() if len(sys.argv) == 1 else Game(int(sys.argv[1]))
+    # Argument Parsing
+    parser = argparse.ArgumentParser(description="2048")
+
+    parser.add_argument("--seed", help="load a seed")
+    parser.add_argument("--load", help="load a game")
+    parser.add_argument("--score", help="load a score", default=0, type=int)
+
+    args = parser.parse_args()
+
+    # Main Loop
+    game = Game(seed=args.seed, load=args.load, score=args.score)
+
     while True:
         # Display game state
         clearTerminal()
@@ -184,9 +199,12 @@ def main():
 
         # Get the input of the player
         ch = readchar.readkey()
-
         if ch == "q" or ch == "\x04":
             break
+        while ch not in KeyBind:
+            ch = readchar.readkey()
+            if ch == "q" or ch == "\x04":
+                break
 
         # Compute the input
         game.moveTiles(*KeyBind[ch])
