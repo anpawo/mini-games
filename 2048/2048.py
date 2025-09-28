@@ -34,13 +34,13 @@ class Game:
     - the first tile to fuse is the one on the rightest if u press right (same for every direction)
     """
 
-    def __init__(self, seed: int = int(time.time()), load: None | str = None, score: int = 0) -> None:
+    def __init__(self, seed: None | float, load: None | str = None, score: int = 0) -> None:
         self.score = score
         self.boardIsFull = False
         self.tilesMoved = False
 
         # Random
-        self.seed = seed
+        self.seed = seed or time.time()
         random.seed(self.seed)
 
         # Load game
@@ -173,9 +173,6 @@ class Game:
                     return False
         return True
 
-    def restart(self):
-        self.__init__(seed=self.seed)
-
 
 def clearTerminal():
     os.system("clear")
@@ -190,7 +187,7 @@ def main():
 
     # Load a game and the current score at the time (sadly, it cannot follow the seed you had at the time)
     parser.add_argument("--load", help="load a game")
-    parser.add_argument("--score", help="load a score", default=0, type=int)
+    parser.add_argument("--score", help="load a score", default=0, type=float)
 
     args = parser.parse_args()
 
@@ -208,13 +205,13 @@ def main():
             break
 
         # Get the input of the player
-        ch = None
+        # ch = None
         while (ch := readchar.readkey()) not in KeyBind:
             continue
         if ch == "q" or ch == "\x04":
             return
         if ch == "r":
-            game.restart()
+            game.__init__(seed=args.seed)
             continue
 
         # Compute the input
