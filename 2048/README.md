@@ -2,11 +2,18 @@
 
 # 2048
 
+## language used
+```
+Python 3.13.7
+```
+
 ## build
 ```
 git clone git@github.com:anpawo/mini-games.git
 
 cd 2048
+
+pip install -r requirements.txt
 
 ./2048.py
 ```
