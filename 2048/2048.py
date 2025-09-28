@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 
-import sys
 import time
 import os
 import readchar
@@ -10,10 +9,16 @@ import argparse
 
 
 KeyBind = {
+    # Movement
     readchar.key.LEFT: (-1, 0),
     readchar.key.RIGHT: (1, 0),
     readchar.key.UP: (0, -1),
     readchar.key.DOWN: (0, 1),
+    # Restart
+    "r": None,
+    # Quit
+    "q": None,
+    "\x04": None,  # Ctrl + D
 }
 
 
@@ -56,16 +61,15 @@ class Game:
         # self.boardSize = 4
         # self.tileSize = 5
 
-    # display
-    def __str__(self) -> str:
+    def display(self) -> None:
         """
         ┌─┬─┐
         ├─┼─┤
         └─┴─┘
         """
-        seed = f"Seed: {self.seed}\n"
+        seed = f"Seed:  {self.seed}\n"
         score = f"Score: {self.score}\n"
-        keybinds = "(⭠ ) Left\n(⭢ ) Right\n( ⭡) Up\n( ⭣) Down\n"
+        keybinds = "(⭠) Left\n(⭢) Right\n(⭡) Up\n(⭣) Down\n\n(r) Restart\n(q) Quit\n"
         board = ""
         for y in range(4):
             # first
@@ -84,9 +88,9 @@ class Game:
 
             # last
             if y == 0:
-                board += "┐"  # type: ignore
+                board += "┐"
             else:
-                board += "┤"  # type: ignore
+                board += "┤"
             board += "\n"
 
             for x in range(4):
@@ -97,7 +101,7 @@ class Game:
         # last line
         board += "└" + (("─" * 4) + "┴") * 3 + ("─" * 4) + "┘\n"
 
-        return seed + score + board + keybinds
+        print(seed + score + board + keybinds)
 
     def nextCollision(self, x: int, y: int, vx: int, vy: int) -> tuple[bool, int, int]:
         if 0 <= x + vx <= 3 and 0 <= y + vy <= 3 and self.board[y + vy][x + vx][0] == 0:
@@ -169,6 +173,9 @@ class Game:
                     return False
         return True
 
+    def restart(self):
+        self.__init__(seed=self.seed)
+
 
 def clearTerminal():
     os.system("clear")
@@ -178,7 +185,10 @@ def main():
     # Argument Parsing
     parser = argparse.ArgumentParser(description="2048")
 
+    # Seed for game start
     parser.add_argument("--seed", help="load a seed")
+
+    # Load a game and the current score at the time (sadly, it cannot follow the seed you had at the time)
     parser.add_argument("--load", help="load a game")
     parser.add_argument("--score", help="load a score", default=0, type=int)
 
@@ -190,7 +200,7 @@ def main():
     while True:
         # Display game state
         clearTerminal()
-        print(game)
+        game.display()
 
         # Check loss
         if game.isLost():
@@ -198,13 +208,14 @@ def main():
             break
 
         # Get the input of the player
-        ch = readchar.readkey()
+        ch = None
+        while (ch := readchar.readkey()) not in KeyBind:
+            continue
         if ch == "q" or ch == "\x04":
-            break
-        while ch not in KeyBind:
-            ch = readchar.readkey()
-            if ch == "q" or ch == "\x04":
-                break
+            return
+        if ch == "r":
+            game.restart()
+            continue
 
         # Compute the input
         game.moveTiles(*KeyBind[ch])
@@ -215,9 +226,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# TODO:
-"""
-- use EMPTY_TILE
-- add some colors
-"""
